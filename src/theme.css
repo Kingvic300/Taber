@@ -1,0 +1,96 @@
+:root {
+  --bg: #f7f7f9;
+  --surface: #ffffff;
+  --surface-2: #f0f0f4;
+  --border: #e3e3ea;
+  --text: #17171c;
+  --muted: #6b6b78;
+  --accent: #4338ca;
+  --accent-text: #ffffff;
+  --accent-soft: #e8e7fb;
+  --danger: #c2410c;
+  --warn-soft: #fff4e5;
+  --warn-text: #9a4a00;
+  --radius: 8px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141418;
+    --surface: #1c1c22;
+    --surface-2: #26262e;
+    --border: #2f2f39;
+    --text: #ececf1;
+    --muted: #9a9aa8;
+    --accent: #8b85ff;
+    --accent-text: #0f0f14;
+    --accent-soft: #2a2850;
+    --danger: #ff8a5b;
+    --warn-soft: #3a2a14;
+    --warn-text: #ffc27a;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.btn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--surface-2); }
+.btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.btn.primary:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: .5; cursor: default; }
+
+input[type="search"], input[type="number"], select, textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px 10px;
+}
+
+.muted { color: var(--muted); }
+
+.favicon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 3px;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--surface-2);
+  color: var(--muted);
+  overflow: hidden;
+}
+.favicon img { width: 16px; height: 16px; display: block; }

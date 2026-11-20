@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taber Settings</title>
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    body { padding: 32px 16px; font-size: 14px; }
+    main { max-width: 640px; margin: 0 auto; }
+    h1 { font-size: 22px; margin: 0 0 4px; display: flex; align-items: center; gap: 10px; }
+    .sub { margin: 0 0 24px; }
+    section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    h2 { font-size: 15px; margin: 0 0 4px; }
+    section > p { margin: 0 0 14px; font-size: 13px; }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 0;
+      border-top: 1px solid var(--border);
+    }
+    .row.block { display: block; }
+    .row label { flex: 1; }
+    .row small { display: block; color: var(--muted); font-size: 12px; }
+    input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+    input[type="number"] { width: 80px; }
+    .inline { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+    textarea { width: 100%; min-height: 90px; resize: vertical; font-family: ui-monospace, monospace; font-size: 12px; margin-top: 6px; }
+    #topics { min-height: 200px; white-space: pre; overflow-x: auto; }
+    .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+    .notice {
+      background: var(--warn-soft);
+      color: var(--warn-text);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      font-size: 13px;
+    }
+    .saved { position: fixed; bottom: 16px; right: 16px; background: var(--text); color: var(--bg);
+      padding: 6px 12px; border-radius: 999px; font-size: 12px; opacity: 0; transition: opacity .15s; }
+    .saved.show { opacity: 1; }
+    @media (max-width: 520px) {
+      .row { flex-wrap: wrap; }
+      .inline { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1><img src="../icons/icon-48.png" alt="" width="28" height="28"> Taber settings</h1>
+    <p class="sub muted">Changes save on their own.</p>
+
+    <section>
+      <h2>Duplicate tabs</h2>
+      <p class="muted">When you open a page that is already open, Taber keeps one tab and closes the copy. <code>http</code>/<code>https</code>, <code>www.</code> and a trailing <code>/</code> count as the same page.</p>
+      <div class="row"><label for="dupCheck">Stop duplicate tabs</label><input type="checkbox" id="dupCheck"></div>
+      <div class="row"><label for="dupAction">When a page is already open</label>
+        <select id="dupAction">
+          <option value="close">Keep one tab, close the copy</option>
+          <option value="ask">Ask: go to the open tab, or open a new copy</option>
+        </select></div>
+      <div class="row"><label for="dupIgnoreHash">Ignore the <code>#section</code> part of URLs<small>page#a and page#b count as the same page</small></label><input type="checkbox" id="dupIgnoreHash"></div>
+      <div class="row"><label for="dupIgnoreQuery">Ignore the <code>?query</code> part of URLs<small>Careful: different search results will count as the same page</small></label><input type="checkbox" id="dupIgnoreQuery"></div>
+    </section>
+
+    <section>
+      <h2>Join tabs into groups</h2>
+      <p class="muted">Puts related tabs into one tab group. Topics come first (Dev, Video, …); other tabs are grouped by site.</p>
+      <div class="row"><label for="autoGroup">Group tabs automatically</label><input type="checkbox" id="autoGroup"></div>
+      <div class="row"><label for="groupMinTabs">Make a group when there are at least</label>
+        <span class="inline"><input type="number" id="groupMinTabs" min="2" max="20"> tabs</span></div>
+      <div class="row"><label for="collapseInactiveGroups">Collapse groups you are not using<small>Only the group of the tab you are on stays open</small></label><input type="checkbox" id="collapseInactiveGroups"></div>
+      <div class="row"><label for="tidyGroups">Keep groups side by side<small>No loose tab between two groups: loose tabs go after the last group</small></label><input type="checkbox" id="tidyGroups"></div>
+      <div class="row"><label for="topicGroups">Group by topic<small>Off: group by site only</small></label><input type="checkbox" id="topicGroups"></div>
+      <div class="row block">
+        <label for="topics">Topics <small>One per line: <code>Name (color): site.com, other.com</code>. Colors: blue, red, yellow, green, pink, purple, cyan, orange, grey.</small></label>
+        <textarea id="topics" spellcheck="false"></textarea>
+        <div class="buttons"><button class="btn" id="resetTopics" type="button">Reset to default topics</button></div>
+      </div>
+      <p class="muted" id="groupNote" hidden>This browser has no tab groups. Taber puts related tabs next to each other instead.</p>
+    </section>
+
+    <section>
+      <h2>Sleep idle tabs</h2>
+      <p class="muted">A sleeping tab stays in the tab bar but uses no memory or CPU. Click it and it loads again.</p>
+      <div class="row"><label for="sleepEnabled">Put idle tabs to sleep</label><input type="checkbox" id="sleepEnabled"></div>
+      <div class="row"><label for="sleepValue">Sleep tabs not used for</label>
+        <span class="inline"><input type="number" id="sleepValue" min="1"><select id="sleepUnit"><option value="1">minutes</option><option value="60">hours</option><option value="1440">days</option></select></span></div>
+    </section>
+
+    <section>
+      <h2>CPU-heavy tabs</h2>
+      <p class="muted">Taber watches how busy each background page keeps the browser. A page that stays busy too long is put to sleep. The tab you are on and tabs playing sound are left alone.</p>
+      <div id="permNotice" class="notice" hidden>
+        <span>Taber needs access to websites to watch CPU use.</span>
+        <button class="btn" id="grantPerm" type="button">Allow access</button>
+      </div>
+      <div class="row"><label for="heavyEnabled">Act on CPU-heavy tabs</label><input type="checkbox" id="heavyEnabled"></div>
+      <div class="row"><label for="heavyThreshold">When a page is busy at least</label>
+        <span class="inline"><input type="number" id="heavyThreshold" min="10" max="100" step="5"> % of the time</span></div>
+      <div class="row"><label for="heavySeconds">for</label>
+        <span class="inline"><input type="number" id="heavySeconds" min="20" step="10"> seconds</span></div>
+      <div class="row"><label for="heavyAction">Then</label>
+        <select id="heavyAction"><option value="sleep">Put it to sleep</option><option value="close">Close it</option></select></div>
+      <p class="muted" style="margin:10px 0 0;font-size:12px">Browsers do not give extensions exact CPU numbers, so this is an estimate of the page's main work. Heavy work in background threads (Web Workers) is not seen.</p>
+    </section>
+
+    <section>
+      <h2>Tab limit</h2>
+      <p class="muted">Keeps each window under a set number of tabs by acting on the least recently used ones.</p>
+      <div class="row"><label for="tabLimitEnabled">Limit tabs per window</label><input type="checkbox" id="tabLimitEnabled"></div>
+      <div class="row"><label for="tabLimit">Most tabs per window</label><input type="number" id="tabLimit" min="5" max="500"></div>
+      <div class="row"><label for="tabLimitAction">Over the limit<small>Sleep: the limit counts awake tabs. Close: it counts all tabs.</small></label>
+        <select id="tabLimitAction"><option value="sleep">Put oldest to sleep</option><option value="close">Close oldest</option></select></div>
+    </section>
+
+    <section>
+      <h2>Close old tabs</h2>
+      <p class="muted">Closes tabs you have not looked at for a long time. Pinned tabs, the tab you are on and tabs playing sound stay open. Restore closed tabs from the popup.</p>
+      <div class="row"><label for="autoClose">Close old tabs automatically</label><input type="checkbox" id="autoClose"></div>
+      <div class="row"><label for="ageValue">Close tabs not used for</label>
+        <span class="inline"><input type="number" id="ageValue" min="1"><select id="ageUnit"><option value="1">minutes</option><option value="60">hours</option><option value="1440">days</option></select></span></div>
+      <div class="row"><label for="closeErrorTabs">Close tabs that did not load<small>"Problem loading page" or "This site can't be reached". Certificate warnings, pinned tabs and times when you are offline are skipped.</small></label><input type="checkbox" id="closeErrorTabs"></div>
+      <div class="row"><label for="autoCloseKeepGrouped">Keep tabs that are in a group</label><input type="checkbox" id="autoCloseKeepGrouped"></div>
+      <div class="row"><label for="undoNotice">Show a notice with Undo when Taber closes tabs</label><input type="checkbox" id="undoNotice"></div>
+      <div class="row block">
+        <label for="whitelist">Never sleep or close these sites <small>One per line, e.g. <code>mail.google.com</code>. Subdomains count too.</small></label>
+        <textarea id="whitelist" spellcheck="false"></textarea>
+      </div>
+    </section>
+
+    <section>
+      <h2>Sync and backup</h2>
+      <div class="row"><label for="syncSettings">Sync settings across your computers<small>Uses your browser account (Chrome sign-in or Firefox Account)</small></label><input type="checkbox" id="syncSettings"></div>
+      <div class="row block">
+        <label>Backup file<small>Settings, saved sessions, snoozed tabs, open tabs and stats in one JSON file. Importing adds sessions and snoozed tabs; your open tabs come back as a saved session.</small></label>
+        <div class="buttons" style="margin-top:8px">
+          <button class="btn" id="exportBtn" type="button">Export backup</button>
+          <button class="btn" id="importBtn" type="button">Import backup</button>
+          <input type="file" id="importFile" accept="application/json,.json" hidden>
+        </div>
+        <p class="muted" id="importResult" style="font-size:12px;margin:8px 0 0"></p>
+      </div>
+    </section>
+  </main>
+  <div class="saved" id="saved" role="status">Saved</div>
+  <script type="module" src="options.js"></script>
+</body>
+</html>
