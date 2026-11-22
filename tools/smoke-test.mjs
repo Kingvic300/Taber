@@ -122,6 +122,18 @@ assert.equal(normalizeUrl('https://example.com'), normalizeUrl('https://www.exam
 assert.notEqual(normalizeUrl('https://example.com/a'), normalizeUrl('https://example.com/b'));
 console.log('ok  http/https, www. and trailing / count as the same page');
 
+// 0b. Subdomains fold into their registrable domain, which names the group
+const { domainOf, groupKeyFor, DEFAULTS } = await import('../src/shared.js');
+assert.equal(domainOf('https://mail.google.com/x'), 'google.com');
+assert.equal(domainOf('https://docs.google.com/d'), 'google.com');
+assert.equal(domainOf('https://news.bbc.co.uk/'), 'bbc.co.uk');
+assert.equal(domainOf('http://localhost:3000/'), 'localhost');
+assert.equal(domainOf('http://192.168.1.5/'), '192.168.1.5');
+const noTopics = { ...DEFAULTS, topicGroups: false };
+assert.equal(groupKeyFor('https://mail.google.com/', noTopics).title, groupKeyFor('https://maps.google.com/', noTopics).title);
+assert.equal(groupKeyFor('https://gist.github.com/x', DEFAULTS).title, 'Dev', 'topic still wins over domain');
+console.log('ok  subdomains group under their domain');
+
 // 1. duplicate prompt (ask mode)
 await chrome.storage.local.set({ settings: { dupAction: 'ask' } });
 await chrome.storage.onChanged.fire({ settings: {} });

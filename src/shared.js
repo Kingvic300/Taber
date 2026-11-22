@@ -148,6 +148,32 @@ export function siteOf(url) {
   }
 }
 
+// Second-level suffixes where the registrable domain is three labels (bbc.co.uk).
+const MULTI_PART_SUFFIXES = new Set([
+  'co.uk', 'org.uk', 'ac.uk', 'gov.uk', 'me.uk', 'ltd.uk', 'plc.uk',
+  'com.au', 'net.au', 'org.au', 'edu.au', 'gov.au',
+  'co.nz', 'org.nz', 'net.nz', 'govt.nz',
+  'co.jp', 'ne.jp', 'or.jp', 'ac.jp', 'go.jp',
+  'co.kr', 'or.kr', 'co.in', 'net.in', 'org.in', 'firm.in', 'gen.in', 'ind.in',
+  'com.br', 'net.br', 'org.br', 'com.mx', 'org.mx', 'com.ar', 'com.co', 'com.pe',
+  'co.za', 'org.za', 'com.tr', 'com.cn', 'net.cn', 'org.cn', 'com.hk', 'com.tw', 'com.sg',
+  'co.il', 'org.il', 'com.my', 'com.ph', 'com.vn', 'co.id', 'com.pk', 'com.ng', 'co.ke',
+  'com.eg', 'com.sa', 'com.ua', 'co.th', 'in.th', 'com.gr', 'com.pl', 'co.at', 'or.at',
+]);
+
+// The registrable domain: "mail.google.com" and "docs.google.com" both give
+// "google.com"; "news.bbc.co.uk" gives "bbc.co.uk". IP addresses and
+// single-label hosts (localhost) are returned as they are.
+export function domainOf(url) {
+  const site = siteOf(url);
+  if (!site || site === 'local files') return site;
+  const labels = site.split('.');
+  if (labels.length <= 2 || /^[\d.]+$/.test(site) || site.includes(':')) return site;
+  const last2 = labels.slice(-2).join('.');
+  const keep = MULTI_PART_SUFFIXES.has(last2) && labels.length >= 3 ? 3 : 2;
+  return labels.slice(-keep).join('.');
+}
+
 // "google.com" matches google.com and any subdomain of it.
 export function matchSite(site, pattern) {
   return site === pattern || site.endsWith('.' + pattern);
@@ -168,7 +194,8 @@ export function colorFor(name) {
   return GROUP_COLORS[h % GROUP_COLORS.length];
 }
 
-// Which group a tab belongs in: its topic if one matches, else its site.
+// Which group a tab belongs in: its topic if one matches, else its domain
+// (subdomains are folded into their parent domain).
 export function groupKeyFor(url, settings) {
   const site = siteOf(url);
   if (settings.topicGroups) {
@@ -178,7 +205,8 @@ export function groupKeyFor(url, settings) {
       }
     }
   }
-  return { title: site, color: colorFor(site) };
+  const domain = domainOf(url);
+  return { title: domain, color: colorFor(domain) };
 }
 
 // Text format, one topic per line:  Dev (blue): github.com, stackoverflow.com
