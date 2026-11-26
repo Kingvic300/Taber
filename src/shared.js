@@ -10,8 +10,8 @@ export const DEFAULT_TOPICS = [
   { name: 'AI', color: 'purple', sites: ['chatgpt.com', 'openai.com', 'claude.ai', 'anthropic.com', 'gemini.google.com', 'perplexity.ai', 'huggingface.co', 'grok.com', 'x.ai', 'copilot.microsoft.com', 'deepseek.com', 'mistral.ai', 'meta.ai', 'poe.com', 'character.ai', 'aistudio.google.com', 'notebooklm.google.com', 'chat.qwen.ai', 'kimi.com', 'openrouter.ai', 'groq.com', 'together.ai', 'replicate.com', 'midjourney.com', 'ideogram.ai', 'leonardo.ai', 'runwayml.com', 'elevenlabs.io', 'suno.com', 'lovable.dev', 'bolt.new', 'v0.dev', 'v0.app', 'cursor.com'] },
   { name: 'Mail & Chat', color: 'green', sites: ['mail.google.com', 'outlook.live.com', 'outlook.office.com', 'proton.me', 'web.whatsapp.com', 'web.telegram.org', 'discord.com', 'slack.com', 'teams.microsoft.com'] },
   { name: 'Work', color: 'cyan', sites: ['docs.google.com', 'drive.google.com', 'calendar.google.com', 'notion.so', 'figma.com', 'trello.com', 'atlassian.net', 'airtable.com'] },
-  { name: 'Video', color: 'red', sites: ['youtube.com', 'netflix.com', 'twitch.tv', 'vimeo.com', 'primevideo.com', 'disneyplus.com'] },
-  { name: 'Social', color: 'pink', sites: ['x.com', 'twitter.com', 'facebook.com', 'instagram.com', 'reddit.com', 'linkedin.com', 'tiktok.com', 'threads.net', 'threads.com', 'pinterest.com', 'snapchat.com', 'tumblr.com', 'bsky.app', 'mastodon.social'] },
+  { name: 'Video', color: 'red', sites: ['netflix.com', 'twitch.tv', 'vimeo.com', 'primevideo.com', 'disneyplus.com'] },
+  { name: 'Social', color: 'pink', sites: ['x.com', 'twitter.com', 'youtube.com', 'youtu.be', 'facebook.com', 'instagram.com', 'reddit.com', 'linkedin.com', 'tiktok.com', 'threads.net', 'threads.com', 'pinterest.com', 'snapchat.com', 'tumblr.com', 'bsky.app', 'mastodon.social'] },
   { name: 'Shopping', color: 'orange', sites: ['amazon.com', 'ebay.com', 'aliexpress.com', 'etsy.com', 'walmart.com', 'temu.com'] },
   { name: 'News', color: 'grey', sites: ['news.google.com', 'news.ycombinator.com', 'bbc.com', 'bbc.co.uk', 'cnn.com', 'nytimes.com', 'theguardian.com', 'reuters.com', 'apnews.com'] },
 ];
@@ -44,6 +44,11 @@ export const DEFAULTS = {
   autoCloseKeepGrouped: false,
   whitelist: [],
 
+  // Smart keep: tabs you use most are never closed automatically
+  smartKeep: true,
+  smartKeepSites: 8, // how many of your most-used sites to keep
+  smartKeepReturns: 5, // also keep a tab you switched to this many times
+
   // Tab limit per window
   tabLimitEnabled: true,
   tabLimit: 30,
@@ -58,6 +63,28 @@ export const DEFAULTS = {
   undoNotice: true,
   closedLogSize: 200,
 };
+
+/* ---------- smart keep: which sites you use most ---------- */
+
+// Each use adds 1 to a site's score; the score halves every week, so old
+// habits fade and the sites you use now rise to the top.
+const USAGE_HALF_LIFE_MS = 7 * 864e5;
+export const USAGE_MIN_SCORE = 5;
+
+export function usageScore(rec, now = Date.now()) {
+  if (!rec) return 0;
+  return rec.score * 0.5 ** (Math.max(0, now - rec.at) / USAGE_HALF_LIFE_MS);
+}
+
+// Your `n` most-used sites, most used first.
+export function topUsedSites(usage, n, now = Date.now()) {
+  return Object.entries(usage ?? {})
+    .map(([site, rec]) => [site, usageScore(rec, now)])
+    .filter(([, score]) => score >= USAGE_MIN_SCORE)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, n)
+    .map(([site]) => site);
+}
 
 /* ---------- settings (local, optionally mirrored to storage.sync) ---------- */
 
@@ -88,7 +115,7 @@ export async function saveSettings(patch) {
   const next = { ...(await getSettings()), ...patch };
   await api.storage.local.set({ settings: next });
   if (await isSyncOn()) {
-    try { await api.storage.sync.set({ settings: next }); } catch (e) { console.warn('Taber: sync failed', e); }
+    try { await api.storage.sync.set({ settings: next }); } catch (e) { console.warn('Tabora: sync failed', e); }
   }
   cache = next;
   return next;

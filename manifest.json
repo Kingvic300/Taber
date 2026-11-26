@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Taber — Tab Manager",
-  "short_name": "Taber",
-  "version": "1.4.1",
+  "name": "Tabora — Smart Tab Manager",
+  "short_name": "Tabora",
+  "version": "1.5.0",
   "description": "Reads your tabs, groups them by topic or site, sleeps idle and CPU-heavy tabs, closes old ones, stops duplicates, and saves sessions.",
   "minimum_chrome_version": "121",
   "permissions": [
@@ -34,7 +34,7 @@
     }
   ],
   "action": {
-    "default_title": "Taber",
+    "default_title": "Tabora",
     "default_popup": "src/popup.html",
     "default_icon": {
       "16": "icons/icon-16.png",
@@ -51,7 +51,7 @@
       "suggested_key": {
         "default": "Alt+Shift+T"
       },
-      "description": "Open Taber"
+      "description": "Open Tabora"
     }
   },
   "icons": {

@@ -1,9 +1,10 @@
-// Taber background: wires browser events to the feature modules.
-import { api, isFirefox, isWebUrl, siteOf } from './shared.js';
+// Tabora background: wires browser events to the feature modules.
+import { api, getSettings, isFirefox, isWebUrl, saveSettings, siteOf } from './shared.js';
 import { countVisit, closeTabsLogged, restoreEntries, sessionGet, updateSession } from './bg/util.js';
 import { onBeforeNavigate, onUrlChanged, forgetTab, dupSwitch, dupOpenAnyway, closeDuplicates } from './bg/duplicates.js';
 import { groupAll, ungroupAll, mergeWindows, scheduleAutoGroup, collapseInactive } from './bg/grouping.js';
 import { onNavigationError, cancelErrorClose } from './bg/errors.js';
+import { noteUse, noteTabReturn, forgetTabUses } from './bg/usage.js';
 import { sweep, closeOldNow, sleepOthers, scheduleTabLimit, onProbe, forgetHeavy } from './bg/cleanup.js';
 import {
   saveSession, openSession, deleteSession, snoozeTab, wakeSnoozed, cancelSnooze,
@@ -31,7 +32,24 @@ async function injectProbes() {
   }
 }
 
+// Saved settings keep their own copy of the topics. Bring older copies up to
+// date without undoing the user's own edits.
+// topicsVersion 2: YouTube moved from Video to Social.
+async function migrateSettings() {
+  const s = await getSettings();
+  if ((s.topicsVersion ?? 1) >= 2) return;
+  const topics = structuredClone(s.topics);
+  const video = topics.find((t) => t.name === 'Video');
+  const social = topics.find((t) => t.name === 'Social');
+  if (video?.sites.includes('youtube.com') && social) {
+    video.sites = video.sites.filter((x) => x !== 'youtube.com');
+    for (const x of ['youtube.com', 'youtu.be']) if (!social.sites.includes(x)) social.sites.push(x);
+  }
+  await saveSettings({ topics, topicsVersion: 2 });
+}
+
 api.runtime.onInstalled.addListener(() => {
+  migrateSettings().catch((e) => console.warn('Tabora: settings update failed', e));
   ensureAlarm();
   updateBadge();
   injectProbes();
@@ -44,7 +62,7 @@ api.runtime.onStartup.addListener(() => {
 });
 
 api.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === SWEEP_ALARM) sweep().catch((e) => console.warn('Taber: sweep failed', e));
+  if (alarm.name === SWEEP_ALARM) sweep().catch((e) => console.warn('Tabora: sweep failed', e));
   else if (alarm.name.startsWith('snooze:')) wakeSnoozed(alarm.name.slice(7));
 });
 
@@ -72,12 +90,15 @@ api.tabs.onRemoved.addListener((tabId) => {
   updateBadge();
   forgetTab(tabId);
   forgetHeavy(tabId);
+  forgetTabUses(tabId);
   cancelErrorClose(tabId);
 });
 
 api.tabs.onActivated.addListener(({ tabId, windowId }) => {
   collapseInactive(tabId, windowId);
   scheduleTabLimit(); // a woken tab counts as awake again
+  noteTabReturn(tabId);
+  api.tabs.get(tabId).then((t) => noteUse(t.url), () => {});
 });
 
 api.tabs.onUpdated.addListener((tabId, info, tab) => {
@@ -89,7 +110,7 @@ api.tabs.onUpdated.addListener((tabId, info, tab) => {
 
 api.webNavigation.onBeforeNavigate.addListener((d) => {
   if (d.frameId === 0) cancelErrorClose(d.tabId); // a new load or retry started
-  onBeforeNavigate(d).catch((e) => console.warn('Taber: duplicate check failed', e));
+  onBeforeNavigate(d).catch((e) => console.warn('Tabora: duplicate check failed', e));
 });
 
 api.webNavigation.onErrorOccurred.addListener(onNavigationError);
@@ -98,6 +119,7 @@ api.webNavigation.onCommitted.addListener((d) => {
   if (d.frameId !== 0 || !isWebUrl(d.url) || d.documentLifecycle === 'prerender') return;
   if (d.transitionType === 'reload' || d.transitionQualifiers?.includes('forward_back')) return;
   countVisit(siteOf(d.url));
+  noteUse(d.url);
 });
 
 /* ---------- notifications: undo, snooze wake ---------- */

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Submit Taber to addons.mozilla.org as a public (listed) add-on.
+# Submit Tabora to addons.mozilla.org as a public (listed) add-on.
 # Needs AMO API keys: https://addons.mozilla.org/developers/addon/api/key/
 #   export AMO_JWT_ISSUER=user:12345:678
 #   export AMO_JWT_SECRET=...

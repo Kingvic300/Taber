@@ -1,5 +1,5 @@
 // Runs in every web page. Measures how much of the time the page keeps the
-// browser's main thread busy, and reports busy pages to Taber.
+// browser's main thread busy, and reports busy pages to Tabora.
 // Browsers give extensions no real per-tab CPU number, so this is an estimate:
 // Chrome reports "long tasks" (>50 ms); Firefox gets timer lag instead.
 // Work in Web Workers is not seen.

@@ -49,7 +49,7 @@ export function onNavigationError(d) {
   cancelErrorClose(d.tabId);
   pending.set(d.tabId, setTimeout(() => {
     pending.delete(d.tabId);
-    closeFailed(d.tabId, d.url).catch((e) => console.warn('Taber: close error tab failed', e));
+    closeFailed(d.tabId, d.url).catch((e) => console.warn('Tabora: close error tab failed', e));
   }, DELAY_MS));
 }
 

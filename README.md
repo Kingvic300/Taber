@@ -1,4 +1,4 @@
-# Taber — Tab Manager for Chrome and Firefox
+# Tabora — Smart Tab Manager for Chrome and Firefox
 
 One extension, one manifest, for both browsers (Chrome 121+, Firefox 121+; tab groups need Firefox 139+).
 
@@ -8,7 +8,7 @@ One extension, one manifest, for both browsers (Chrome 121+, Firefox 121+; tab g
 |---|---|
 | **Reads your tabs** | The popup lists every tab in every window, with search, duplicate markers and "last used" time. The toolbar badge shows how many tabs are open. |
 | **Shows CPU use** | Every awake tab shows its CPU use for the last 10 seconds, updated every 2 seconds while the popup is open. Each window or group header shows the total for its tabs. **Most CPU** sorts the heaviest tabs to the top. Values of 30 % or more are red (60 % for a group). |
-| **Joins tabs** | Related tabs go into one tab group. Topics come first (Dev, AI, Mail & Chat, Work, Video, Social, Shopping, News; you can edit them). Other tabs are grouped by site once 2 or more are open. Groups you are not using fold up. |
+| **Joins tabs** | Related tabs go into one tab group. Topics come first (Dev, AI, Mail & Chat, Work, Video, Social, Shopping, News; you can edit them). YouTube and X count as Social. Other tabs are grouped by site once 2 or more are open. Groups you are not using fold up. |
 | **Keeps groups side by side** | No loose tab sits between two groups: groups line up after the pinned tabs, loose tabs go after the last group. |
 | **Closes tabs that did not load** | A tab showing "Problem loading page" (Firefox) or "This site can't be reached" (Chrome) closes after 2 s, with **Undo**. A retry within that time keeps it. Certificate warnings, stopped loads, pinned tabs and times when you are offline are skipped. |
 | **Stops duplicate tabs** | Opening a page that is already open keeps one tab and closes the copy: a new tab closes and the open tab comes to the front; a tab you navigate in stays and the other copy closes (with **Undo**). `http`/`https`, `www.` and a trailing `/` count as the same page. Pinned tabs are kept. Settings can switch this to a prompt instead: **Go to open tab** (Enter) or **Open new copy** (N). |
@@ -16,6 +16,7 @@ One extension, one manifest, for both browsers (Chrome 121+, Firefox 121+; tab g
 | **Calms CPU-heavy tabs** | A background tab that keeps the browser busy ≥ 50 % of the time for 60 s is put to sleep. |
 | **Tab limit** | More than 30 awake tabs in a window: the least recently used ones are put to sleep. |
 | **Closes old tabs** | Tabs unused for 1 day are closed. A notice with **Undo** appears, and every closed tab stays in **Recently closed** in the popup. |
+| **Smart keep** | Tabora learns which sites and tabs you use most. It never closes them on its own: cleanup puts them to sleep instead, and they stay awake twice as long. Use fades after about a week. |
 
 Pinned tabs, the tab you are on, tabs playing sound and sites on your "never sleep or close" list are never touched automatically.
 
@@ -50,7 +51,7 @@ Firefox removes temporary add-ons on restart. For a permanent install, sign the 
 ## Build and test
 
 ```sh
-./build.sh                     # dist/taber-<version>-chrome.zip and -firefox.xpi
+./build.sh                     # dist/tabora-<version>-chrome.zip and -firefox.xpi
 node tools/smoke-test.mjs      # runs the background against a fake browser API
 python3 tools/make_icons.py    # regenerate icons
 ```

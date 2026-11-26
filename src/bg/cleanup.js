@@ -3,10 +3,11 @@ import { api, getSettings, isWebUrl, isWhitelisted } from '../shared.js';
 import { addMemory, bumpStat, closeTabsLogged, measureHeap, tabNames, updateSession } from './util.js';
 import { closeErrorTabs } from './errors.js';
 import { tidyAll } from './grouping.js';
+import { keeper } from './usage.js';
 
 const isGrouped = (t) => t.groupId !== undefined && t.groupId !== -1;
 
-// Tabs Taber never sleeps or closes on its own.
+// Tabs Tabora never sleeps or closes on its own.
 function isProtected(t, settings) {
   return t.pinned || t.active || t.audible || !isWebUrl(t.url) || isWhitelisted(t.url, settings);
 }
@@ -50,8 +51,9 @@ export async function sleepOthers(windowId) {
 export async function closeOld(settings, notify) {
   const cutoff = Date.now() - settings.autoCloseMinutes * 60_000;
   const tabs = await api.tabs.query({});
+  const kept = await keeper(settings); // tabs you use most stay open
   const victims = tabs.filter((t) =>
-    !isProtected(t, settings) &&
+    !isProtected(t, settings) && !kept(t) &&
     t.lastAccessed && t.lastAccessed < cutoff &&
     !(settings.autoCloseKeepGrouped && isGrouped(t)));
   await closeTabsLogged(victims, 'stale', {
@@ -73,15 +75,17 @@ export async function enforceTabLimit() {
   if (!settings.tabLimitEnabled) return;
   const windows = await api.windows.getAll({ windowTypes: ['normal'], populate: true });
   const closing = settings.tabLimitAction === 'close';
+  const kept = await keeper(settings);
   const toClose = [];
   for (const w of windows) {
     // When sleeping, the limit counts awake tabs; when closing, all tabs.
     const counted = w.tabs.filter((t) => !t.pinned && (closing || !t.discarded));
     const excess = counted.length - settings.tabLimit;
     if (excess <= 0) continue;
+    // Tabs you use most are never closed, and are the last to be put to sleep.
     const oldest = counted
-      .filter((t) => !isProtected(t, settings))
-      .sort((a, b) => (a.lastAccessed ?? 0) - (b.lastAccessed ?? 0))
+      .filter((t) => !isProtected(t, settings) && !(closing && kept(t)))
+      .sort((a, b) => kept(a) - kept(b) || (a.lastAccessed ?? 0) - (b.lastAccessed ?? 0))
       .slice(0, excess);
     if (closing) toClose.push(...oldest);
     else await sleepTabs(oldest, 'slept_limit');
@@ -107,10 +111,14 @@ export async function sweep() {
   await closeErrorTabs(settings);
   if (settings.autoClose) await closeOld(settings, true);
   if (settings.sleepEnabled) {
-    const cutoff = Date.now() - settings.sleepMinutes * 60_000;
+    // Tabs you use most stay awake twice as long.
+    const now = Date.now();
+    const idleMs = settings.sleepMinutes * 60_000;
+    const kept = await keeper(settings);
     const tabs = await api.tabs.query({});
     await sleepTabs(tabs.filter((t) =>
-      !isProtected(t, settings) && !t.discarded && t.lastAccessed && t.lastAccessed < cutoff));
+      !isProtected(t, settings) && !t.discarded && t.lastAccessed &&
+      t.lastAccessed < now - (kept(t) ? 2 * idleMs : idleMs)));
   }
   await enforceTabLimit();
   await tidyAll(settings);
@@ -139,7 +147,8 @@ export async function onProbe(tab, ratio, seconds) {
 
   await updateSession('heavy', {}, (h) => { delete h[tab.id]; });
   const title = (current.title || current.url).slice(0, 60);
-  if (settings.heavyAction === 'close') {
+  const kept = await keeper(settings);
+  if (settings.heavyAction === 'close' && !kept(current)) {
     await closeTabsLogged([current], 'heavy', {
       notify: true,
       message: `Closed "${title}": it used a lot of CPU.`,
@@ -149,7 +158,7 @@ export async function onProbe(tab, ratio, seconds) {
       api.notifications.create(`info:${crypto.randomUUID()}`, {
         type: 'basic',
         iconUrl: api.runtime.getURL('icons/icon-128.png'),
-        title: 'Taber',
+        title: 'Tabora',
         message: `Put "${title}" to sleep: it used a lot of CPU. Click the tab to wake it.`,
       });
     }

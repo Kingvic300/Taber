@@ -30,7 +30,7 @@ async function joinGroup(windowId, key, tabIds) {
   return groupId;
 }
 
-// Groups Taber made: titled with a site name or a topic name.
+// Groups Tabora made: titled with a site name or a topic name.
 function isTaberTitle(title, settings) {
   return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(title) ||
     title === 'localhost' || title === 'local files' ||
@@ -81,7 +81,7 @@ export async function tidyWindow(windowId) {
   // Each group moves left (or stays): the slots before `index` hold groups already placed.
   let index = pinned;
   for (const groupId of order) {
-    await api.tabGroups.move(groupId, { index }).catch((e) => console.warn('Taber: move group failed', e));
+    await api.tabGroups.move(groupId, { index }).catch((e) => console.warn('Tabora: move group failed', e));
     index += tabs.filter((t) => t.groupId === groupId).length;
   }
 }
@@ -158,7 +158,7 @@ async function runAutoGroup() {
       if (settings.tidyGroups) await tidyWindow(windowId);
       await collapseInactiveIn(windowId);
     } catch (e) {
-      console.warn('Taber: auto-group failed', e);
+      console.warn('Tabora: auto-group failed', e);
     }
   }
 }

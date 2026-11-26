@@ -551,7 +551,7 @@ async function renderStatsPanel() {
     tile(sleeping, 'asleep now'),
     tile(mem ? (mem >= 1024 ? `${(mem / 1024).toFixed(1)} GB` : `${Math.round(mem)} MB`) : '—', 'memory freed'),
   );
-  $('#tiles').lastChild.title = 'Page memory measured before Taber slept or closed tabs. Chrome only; Firefox does not report it.';
+  $('#tiles').lastChild.title = 'Page memory measured before Tabora slept or closed tabs. Chrome only; Firefox does not report it.';
 
   const rows = [
     ['Tabs put to sleep (idle)', week.slept],

@@ -1,6 +1,6 @@
 import {
   api, getSettings, saveSettings, groupsSupported, isSyncOn, setSync,
-  parseTopics, formatTopics, DEFAULT_TOPICS, send,
+  parseTopics, formatTopics, DEFAULT_TOPICS, send, topUsedSites,
 } from './shared.js';
 
 const $ = (id) => document.getElementById(id);
@@ -34,7 +34,7 @@ const s = await getSettings();
 /* ---------- checkboxes and selects ---------- */
 
 for (const id of ['dupCheck', 'dupIgnoreHash', 'dupIgnoreQuery', 'autoGroup', 'collapseInactiveGroups', 'tidyGroups', 'topicGroups', 'closeErrorTabs',
-  'sleepEnabled', 'heavyEnabled', 'tabLimitEnabled', 'autoClose', 'autoCloseKeepGrouped', 'undoNotice']) {
+  'sleepEnabled', 'heavyEnabled', 'tabLimitEnabled', 'autoClose', 'autoCloseKeepGrouped', 'undoNotice', 'smartKeep']) {
   $(id).checked = !!s[id];
   $(id).addEventListener('change', () => save({ [id]: $(id).checked }));
 }
@@ -50,6 +50,8 @@ const numbers = {
   heavyThreshold: [10, 100],
   heavySeconds: [20, 3600],
   tabLimit: [5, 500],
+  smartKeepSites: [1, 50],
+  smartKeepReturns: [2, 100],
 };
 for (const [id, [min, max]] of Object.entries(numbers)) {
   $(id).value = s[id];
@@ -91,6 +93,22 @@ $('whitelist').addEventListener('change', () => {
   const unique = [...new Set(list)];
   $('whitelist').value = unique.join('\n');
   save({ whitelist: unique });
+});
+
+/* ---------- smart keep: sites kept right now ---------- */
+
+async function showKept() {
+  const { usage = {} } = await api.storage.local.get('usage');
+  const { smartKeepSites } = await getSettings();
+  const top = topUsedSites(usage, smartKeepSites);
+  $('keptSites').textContent = top.length ? top.join(', ') : 'No sites yet. Tabora learns as you browse.';
+}
+showKept();
+api.storage.onChanged.addListener((changes) => { if (changes.usage || changes.settings) showKept(); });
+$('resetUsage').addEventListener('click', async () => {
+  await api.storage.local.remove('usage');
+  try { await api.storage.session?.remove('tabUses'); } catch { /* no session storage here */ }
+  flash('Forgotten');
 });
 
 /* ---------- website access (needed for the CPU probe) ---------- */
@@ -137,7 +155,7 @@ $('exportBtn').addEventListener('click', async () => {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `taber-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `tabora-backup-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 });
@@ -149,7 +167,7 @@ $('importFile').addEventListener('change', async () => {
   if (!file) return;
   try {
     const data = JSON.parse(await file.text());
-    if (data?.app !== 'taber') throw new Error('This is not a Taber backup file.');
+    if (data?.app !== 'taber') throw new Error('This is not a Tabora backup file.');
     if (data.settings && typeof data.settings === 'object') {
       const known = Object.fromEntries(Object.entries(data.settings).filter(([k]) => k in s));
       await saveSettings(known);

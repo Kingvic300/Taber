@@ -1,4 +1,4 @@
-"""Generate Taber PNG icons with only the standard library."""
+"""Generate Tabora PNG icons with only the standard library."""
 import struct, zlib, os
 
 BG = (67, 56, 202)       # indigo

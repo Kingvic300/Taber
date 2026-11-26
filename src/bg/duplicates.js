@@ -92,7 +92,7 @@ let changedTimer;
 export function onUrlChanged(tabId) {
   changed.add(tabId);
   clearTimeout(changedTimer);
-  changedTimer = setTimeout(() => dedupeChanged().catch((e) => console.warn('Taber: duplicate check failed', e)), 1000);
+  changedTimer = setTimeout(() => dedupeChanged().catch((e) => console.warn('Tabora: duplicate check failed', e)), 1000);
 }
 
 async function dedupeChanged() {

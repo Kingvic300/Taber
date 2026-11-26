@@ -276,7 +276,26 @@ await chrome.alarms.onAlarm.fire({ name: 'taber-sweep' }); await settle(300);
 assert.ok(!tabs.has(stuck.id), 'already-open error tab closed by sweep');
 console.log('ok  tabs that did not load close; aborted loads, cert warnings and retries stay');
 
-// 13. groups side by side, no loose tab between them
+// 13. smart keep: tabs you use most are not closed
+for (const t of [...tabs.values()]) tabs.delete(t.id);
+const fav = makeTab({ url: 'https://fav.example/', title: 'Fav', active: true });
+for (let i = 0; i < 6; i++) await chrome.webNavigation.onCommitted.fire({ frameId: 0, tabId: fav.id, url: `https://fav.example/p${i}`, transitionType: 'link' });
+tabs.get(fav.id).active = false;
+const favOld = makeTab({ url: 'https://fav.example/old', title: 'Fav old', lastAccessed: Date.now() - 3 * DAY });
+const plainOld = makeTab({ url: 'https://plain.example/', title: 'Plain old', lastAccessed: Date.now() - 3 * DAY });
+const often = makeTab({ url: 'https://often.example/', title: 'Often', lastAccessed: Date.now() - 3 * DAY });
+for (let i = 0; i < 5; i++) await chrome.tabs.onActivated.fire({ tabId: often.id, windowId: 1 });
+await settle(100);
+await chrome.alarms.onAlarm.fire({ name: 'taber-sweep' }); await settle(300);
+assert.ok(tabs.has(favOld.id), 'tab on a most-used site kept');
+assert.ok(tabs.has(often.id), 'tab you keep switching to kept');
+assert.ok(!tabs.has(plainOld.id), 'other old tab closed');
+assert.equal(tabs.get(favOld.id).discarded, true, 'kept tab sleeps instead');
+const { usage } = await chrome.storage.local.get('usage');
+assert.ok(usage['fav.example'].score >= 6);
+console.log('ok  smart keep: most-used site and often-used tab stay open (asleep); other old tab closed');
+
+// 14. groups side by side, no loose tab between them
 for (const t of [...tabs.values()]) tabs.delete(t.id);
 ['https://github.com/a', 'https://lone1.example/', 'https://github.com/b',
   'https://youtube.com/1', 'https://lone2.example/', 'https://youtube.com/2']
@@ -291,6 +310,23 @@ for (const g of new Set(seq.filter((x) => x !== '-'))) {
   assert.equal(at.at(-1) - at[0] + 1, at.length, `group ${g} side by side`);
 }
 console.log('ok  groups side by side, loose tabs after the last group:', seq.join(' '));
+
+// 15. update moves YouTube from Video to Social in older saved settings
+const { DEFAULTS: D } = await import('../src/shared.js');
+const oldTopics = structuredClone(D.topics);
+oldTopics.find((t) => t.name === 'Social').sites = oldTopics.find((t) => t.name === 'Social').sites.filter((x) => !x.startsWith('youtu'));
+oldTopics.find((t) => t.name === 'Video').sites.unshift('youtube.com');
+const oldSettings = { ...D, topics: oldTopics };
+delete oldSettings.topicsVersion;
+await chrome.storage.local.set({ settings: oldSettings });
+await chrome.storage.sync.set({ settings: oldSettings });
+await chrome.storage.onChanged.fire({ settings: {} });
+await chrome.runtime.onInstalled.fire({ reason: 'update' }); await settle(200);
+const { settings: migrated } = await chrome.storage.local.get('settings');
+assert.equal(migrated.topicsVersion, 2);
+assert.ok(!migrated.topics.find((t) => t.name === 'Video').sites.includes('youtube.com'));
+assert.ok(migrated.topics.find((t) => t.name === 'Social').sites.includes('youtube.com'));
+console.log('ok  update moves YouTube into Social in saved settings');
 
 console.log('\nall smoke tests passed');
 process.exit(0);

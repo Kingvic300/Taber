@@ -29,7 +29,7 @@ export async function sessionGet(key, fallback) {
   return r[key] ?? fallback;
 }
 
-// Taber itself opens tabs (undo, sessions, snooze): skip the duplicate prompt meanwhile.
+// Tabora itself opens tabs (undo, sessions, snooze): skip the duplicate prompt meanwhile.
 export async function quiet(ms) {
   await api.storage.session.set({ quietUntil: Date.now() + ms });
 }
@@ -150,7 +150,7 @@ export async function notifyUndo(entries, message) {
   const options = {
     type: 'basic',
     iconUrl: api.runtime.getURL('icons/icon-128.png'),
-    title: 'Taber',
+    title: 'Tabora',
     // Firefox notifications have no buttons: clicking the notice itself undoes.
     message: isFirefox ? `${message} Click to undo.` : message,
   };
