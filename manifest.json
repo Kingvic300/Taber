@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Tabora — Smart Tab Manager",
   "short_name": "Tabora",
-  "version": "1.5.0",
-  "description": "Reads your tabs, groups them by topic or site, sleeps idle and CPU-heavy tabs, closes old ones, stops duplicates, and saves sessions.",
+  "version": "1.5.1",
+  "description": "Groups tabs by topic or site, keeps the tabs you use most, sleeps idle ones, closes old ones, stops duplicates and saves sessions.",
   "minimum_chrome_version": "121",
   "permissions": [
     "tabs",
